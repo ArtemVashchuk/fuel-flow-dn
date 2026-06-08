@@ -30,6 +30,7 @@ try
 
     builder.Services.AddScoped<ImportVouchersCommandHandler>();
     builder.Services.AddScoped<IVoucherProviderParser, OkkoVoucherParser>();
+    builder.Services.AddScoped<IVoucherProviderParser, WogVoucherParser>();
     builder.Services.AddTransient<IPdfRenderer, PdfRenderer>();
     builder.Services.AddTransient<IQrDecoder, QrDecoder>();
     builder.Services.AddTransient<IVoucherDetector, VoucherDetector>();
