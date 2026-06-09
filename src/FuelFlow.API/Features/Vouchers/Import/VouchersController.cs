@@ -6,11 +6,15 @@ namespace FuelFlow.Features.Vouchers.Import;
 [Route("api/[controller]")]
 public sealed class VouchersController : ControllerBase
 {
-    private readonly ImportVouchersCommandHandler _handler;
+    private readonly ImportVouchersCommandHandler _importHandler;
+    private readonly GetVouchersQueryHandler _getHandler;
+    private readonly IQrGenerator _qrGenerator;
 
-    public VouchersController(ImportVouchersCommandHandler handler)
+    public VouchersController(ImportVouchersCommandHandler importHandler, GetVouchersQueryHandler getHandler, IQrGenerator qrGenerator)
     {
-        _handler = handler;
+        _importHandler = importHandler;
+        _getHandler = getHandler;
+        _qrGenerator = qrGenerator;
     }
 
     [HttpPost("import")]
@@ -27,8 +31,32 @@ public sealed class VouchersController : ControllerBase
 
         using var stream = file.OpenReadStream();
         var command = new ImportVouchersCommand(stream, file.FileName);
-        var result = await _handler.HandleAsync(command, cancellationToken);
+        var result = await _importHandler.HandleAsync(command, cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(GetVouchersResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetVouchers([FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default)
+    {
+        var query = new GetVouchersQuery(page, pageSize);
+        var result = await _getHandler.HandleAsync(query, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/qr")]
+    [Produces("image/png")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetVoucherQr(Guid id, [FromQuery] int width = 300, [FromQuery] int height = 300, CancellationToken cancellationToken = default)
+    {
+        var voucher = await _getHandler.GetVoucherByIdAsync(id, cancellationToken);
+        if (voucher == null)
+            return NotFound();
+
+        var base64 = _qrGenerator.GenerateQrCode(voucher.QrPayload, width, height);
+        var bytes = Convert.FromBase64String(base64);
+        return File(bytes, "image/png");
     }
 }
