@@ -41,7 +41,7 @@ public sealed class OkkoVoucherParser : IVoucherProviderParser
 
             var rawText = string.Join("\n", lines);
 
-            var fuelType = ParseFuelType(rawText);
+            FuelType fuelType = FuelType.Unknown;
             var liters = ParseLiters(rawText);
             var expirationDate = ParseExpirationDate(rawText);
             var voucherNumber = ParseVoucherNumber(rawText);
@@ -80,25 +80,6 @@ public sealed class OkkoVoucherParser : IVoucherProviderParser
         }
 
         return await Task.FromResult(parsedVouchers);
-    }
-
-    private static FuelType ParseFuelType(string text)
-    {
-        var normalized = text.ToUpperInvariant()
-            .Replace(" ", "").Replace("\r", "").Replace("\n", "").Replace("-", "");
-
-        if (normalized.Contains("ДПЄВРО") || normalized.Contains("ДП") || normalized.Contains("DP"))
-            return FuelType.Diesel;
-        if (normalized.Contains("А95ЄВРО") || normalized.Contains("А95") || normalized.Contains("A95"))
-            return FuelType.Gasoline95;
-        if (normalized.Contains("А98") || normalized.Contains("A98"))
-            return FuelType.Gasoline98;
-        if (normalized.Contains("ГАЗ") || normalized.Contains("GAZ") || normalized.Contains("LPG"))
-            return FuelType.LPG;
-        if (normalized.Contains("ADBLUE") || normalized.Contains("АДБЛЮ"))
-            return FuelType.AdBlue;
-
-        return FuelType.Unknown;
     }
 
     private static decimal ParseLiters(string text)
