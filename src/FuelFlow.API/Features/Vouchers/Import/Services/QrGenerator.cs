@@ -13,22 +13,15 @@ public sealed class QrGenerator : IQrGenerator
         if (string.IsNullOrWhiteSpace(payload))
             return string.Empty;
 
-        var hints = new Dictionary<EncodeHintType, object>
-        {
-            { EncodeHintType.ERROR_CORRECTION, ZXing.QrCode.Internal.ErrorCorrectionLevel.H },
-            { EncodeHintType.QR_VERSION, 2 },
-            { EncodeHintType.CHARACTER_SET, "UTF-8" },
-            { EncodeHintType.DISABLE_ECI, true }
-        };
-
         var options = new QrCodeEncodingOptions
         {
             Width = width,
             Height = height,
-            Margin = 0
+            Margin = 4
         };
-        foreach (var hint in hints)
-            options.Hints[hint.Key] = hint.Value;
+
+        options.Hints[EncodeHintType.ERROR_CORRECTION] =
+            ZXing.QrCode.Internal.ErrorCorrectionLevel.L;
 
         var writer = new BarcodeWriterPixelData
         {
