@@ -13,18 +13,27 @@ public sealed class QrGenerator : IQrGenerator
         if (string.IsNullOrWhiteSpace(payload))
             return string.Empty;
 
+        var hints = new Dictionary<EncodeHintType, object>
+        {
+            { EncodeHintType.ERROR_CORRECTION, ZXing.QrCode.Internal.ErrorCorrectionLevel.H },
+            { EncodeHintType.QR_VERSION, 5 },
+            { EncodeHintType.CHARACTER_SET, "UTF-8" },
+            { EncodeHintType.DISABLE_ECI, true }
+        };
+
+        var options = new QrCodeEncodingOptions
+        {
+            Width = width,
+            Height = height,
+            Margin = 0
+        };
+        foreach (var hint in hints)
+            options.Hints[hint.Key] = hint.Value;
+
         var writer = new BarcodeWriterPixelData
         {
             Format = BarcodeFormat.QR_CODE,
-            Options = new QrCodeEncodingOptions
-            {
-                Width = width,
-                Height = height,
-                Margin = 0,
-                ErrorCorrection = ZXing.QrCode.Internal.ErrorCorrectionLevel.M,
-                CharacterSet = "UTF-8",
-                DisableECI = true
-            }
+            Options = options
         };
 
         var pixelData = writer.Write(payload);
