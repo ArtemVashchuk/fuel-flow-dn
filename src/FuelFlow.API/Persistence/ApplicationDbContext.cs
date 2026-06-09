@@ -1,3 +1,4 @@
+using FuelFlow.Features.Auth.SharedModels;
 using FuelFlow.Features.Vouchers;
 using FuelFlow.Features.Vouchers.Import;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,10 @@ public sealed class ApplicationDbContext : DbContext, IImportVouchersDbContext
     public DbSet<FuelVoucher> FuelVouchers => Set<FuelVoucher>();
     public DbSet<VoucherImport> VoucherImports => Set<VoucherImport>();
     public DbSet<VoucherImportError> VoucherImportErrors => Set<VoucherImportError>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<VerificationCode> VerificationCodes => Set<VerificationCode>();
+    public DbSet<Role> Roles => Set<Role>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -151,6 +156,143 @@ public sealed class ApplicationDbContext : DbContext, IImportVouchersDbContext
                 .WithMany()
                 .HasForeignKey(d => d.ImportId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("users");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.PhoneNumber)
+                .HasColumnName("phone_number")
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.RoleId)
+                .HasColumnName("role_id");
+
+            entity.Property(e => e.CreatedAtUtc)
+                .HasColumnName("created_at_utc")
+                .IsRequired();
+
+            entity.Property(e => e.LastLoginAtUtc)
+                .HasColumnName("last_login_at_utc");
+
+            entity.HasOne(e => e.Role)
+                .WithMany()
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.PhoneNumber)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.ToTable("refresh_tokens");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.UserId)
+                .HasColumnName("user_id")
+                .IsRequired();
+
+            entity.Property(e => e.Token)
+                .HasColumnName("token")
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(e => e.ExpiresAtUtc)
+                .HasColumnName("expires_at_utc")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAtUtc)
+                .HasColumnName("created_at_utc")
+                .IsRequired();
+
+            entity.Property(e => e.IsRevoked)
+                .HasColumnName("is_revoked")
+                .IsRequired();
+
+            entity.Property(e => e.RevokedAtUtc)
+                .HasColumnName("revoked_at_utc");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.Token)
+                .IsUnique();
+
+            entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<VerificationCode>(entity =>
+        {
+            entity.ToTable("verification_codes");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.PhoneNumber)
+                .HasColumnName("phone_number")
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.Code)
+                .HasColumnName("code")
+                .HasMaxLength(10)
+                .IsRequired();
+
+            entity.Property(e => e.ExpiresAtUtc)
+                .HasColumnName("expires_at_utc")
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAtUtc)
+                .HasColumnName("created_at_utc")
+                .IsRequired();
+
+            entity.Property(e => e.IsUsed)
+                .HasColumnName("is_used")
+                .IsRequired();
+
+            entity.Property(e => e.UsedAtUtc)
+                .HasColumnName("used_at_utc");
+
+            entity.HasIndex(e => e.PhoneNumber);
+            entity.HasIndex(e => e.ExpiresAtUtc);
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.ToTable("roles");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Id)
+                .HasColumnName("id");
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAtUtc)
+                .HasColumnName("created_at_utc")
+                .IsRequired();
+
+            entity.HasIndex(e => e.Name)
+                .IsUnique();
         });
     }
 

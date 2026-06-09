@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FuelFlow.Features.Vouchers.Import;
@@ -14,9 +15,12 @@ public sealed class VouchersController : ControllerBase
     }
 
     [HttpPost("import")]
+    [Authorize(Roles = "Admin")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ImportVouchersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ImportVouchers(IFormFile file, CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
