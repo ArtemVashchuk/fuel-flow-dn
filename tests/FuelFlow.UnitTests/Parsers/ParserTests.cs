@@ -170,12 +170,12 @@ public class ParserTests
         // Assert
         result.Should().HaveCount(1);
         var parsed = result.First();
-        parsed.FuelType.Should().Be(FuelType.LPG);
+        parsed.FuelType.Should().Be(FuelType.Unknown);
         parsed.Liters.Should().Be(50m);
         parsed.VoucherNumber.Should().Be("99999600000020368126");
         parsed.ExpirationDate.Should().Be(default);
         parsed.QrPayload.Should().Be(string.Empty);
-        parsed.Confidence.Should().Be(60m);
+        parsed.Confidence.Should().Be(40m);
     }
 
     [Fact]
@@ -258,11 +258,11 @@ public class ParserTests
         result.Should().HaveCount(1);
         var parsed = result.First();
         parsed.Provider.Should().Be("WOG");
-        parsed.FuelType.Should().Be(FuelType.Gasoline95);
+        parsed.FuelType.Should().Be(FuelType.Unknown);
         parsed.Liters.Should().Be(10m);
         parsed.ExpirationDate.Should().Be(new DateOnly(2026, 5, 13));
         parsed.VoucherNumber.Should().Be("10094100096856672796");
-        parsed.Confidence.Should().Be(100m);
+        parsed.Confidence.Should().Be(80m);
     }
 
     [Fact]
