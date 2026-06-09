@@ -1,8 +1,18 @@
+using System.Text;
+using FuelFlow.Features.Auth.Refresh;
+using FuelFlow.Features.Auth.SendCode;
+using FuelFlow.Features.Auth.SendCode.Abstractions;
+using FuelFlow.Features.Auth.SendCode.Services;
+using FuelFlow.Features.Auth.SharedAbstractions;
+using FuelFlow.Features.Auth.SharedServices;
+using FuelFlow.Features.Auth.Verify;
 using FuelFlow.Features.Vouchers.Import;
 using FuelFlow.Options;
 using FuelFlow.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -20,6 +30,9 @@ try
         .WriteTo.Console());
 
     builder.Services.Configure<DatabaseOptions>(builder.Configuration.GetSection(DatabaseOptions.SectionName));
+    builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+    builder.Services.Configure<TwilioOptions>(builder.Configuration.GetSection(TwilioOptions.SectionName));
+
     builder.Services.AddScoped<IImportVouchersDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
     builder.Services.AddDbContext<ApplicationDbContext>((services, options) =>
     {
@@ -34,9 +47,47 @@ try
     builder.Services.AddTransient<IQrDecoder, QrDecoder>();
     builder.Services.AddTransient<IVoucherDetector, VoucherDetector>();
 
+    builder.Services.AddScoped<SendCodeCommandHandler>();
+    builder.Services.AddScoped<VerifyCodeCommandHandler>();
+    builder.Services.AddScoped<RefreshTokenCommandHandler>();
+
+    builder.Services.AddScoped<IPhoneNumberService, PhoneNumberService>();
+
+    if (builder.Environment.IsDevelopment())
+    {
+        builder.Services.AddScoped<ISmsService, FakeSmsService>();
+    }
+    else
+    {
+        builder.Services.AddScoped<ISmsService, TwilioSmsService>();
+    }
+
+    builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+    var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Secret)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
-    
+
     builder.Services.AddSwaggerGen(options =>
     {
         options.SwaggerDoc("v1", new() { Title = "FuelFlow API", Version = "v1" });
@@ -54,6 +105,7 @@ try
         });
     }
 
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 

@@ -3,6 +3,7 @@ using System;
 using FuelFlow.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FuelFlow.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609112407_AddAuthEntities")]
+    partial class AddAuthEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,31 +68,6 @@ namespace FuelFlow.Persistence.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
-            modelBuilder.Entity("FuelFlow.Features.Auth.Role", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at_utc");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("roles", (string)null);
-                });
-
             modelBuilder.Entity("FuelFlow.Features.Auth.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -111,16 +89,10 @@ namespace FuelFlow.Persistence.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("phone_number");
 
-                    b.Property<Guid?>("RoleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("role_id");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PhoneNumber")
                         .IsUnique();
-
-                    b.HasIndex("RoleId");
 
                     b.ToTable("users", (string)null);
                 });
@@ -323,16 +295,6 @@ namespace FuelFlow.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("FuelFlow.Features.Auth.User", b =>
-                {
-                    b.HasOne("FuelFlow.Features.Auth.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("FuelFlow.Features.Vouchers.VoucherImportError", b =>
