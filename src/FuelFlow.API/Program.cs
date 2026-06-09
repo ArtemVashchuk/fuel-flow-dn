@@ -34,6 +34,8 @@ try
     builder.Services.AddTransient<IPdfRenderer, PdfRenderer>();
     builder.Services.AddTransient<IQrDecoder, QrDecoder>();
     builder.Services.AddTransient<IVoucherDetector, VoucherDetector>();
+    builder.Services.AddTransient<IQrGenerator, QrGenerator>();
+    builder.Services.AddScoped<GetVouchersQueryHandler>();
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
