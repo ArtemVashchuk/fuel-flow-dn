@@ -28,8 +28,10 @@ public sealed class PdfRenderer : IPdfRenderer
         var firstPage = pdfPigDoc.GetPage(1);
         int targetWidth  = (int)Math.Round(firstPage.Width  * Scale);
         int targetHeight = (int)Math.Round(firstPage.Height * Scale);
+        int pageDimOne = Math.Min(targetWidth, targetHeight);
+        int pageDimTwo = Math.Max(targetWidth, targetHeight);
 
-        using var docReader = DocLib.Instance.GetDocReader(bytes, new PageDimensions(targetWidth, targetHeight));
+        using var docReader = DocLib.Instance.GetDocReader(bytes, new PageDimensions(pageDimOne, pageDimTwo));
 
         for (int i = 0; i < pageCount; i++)
         {
