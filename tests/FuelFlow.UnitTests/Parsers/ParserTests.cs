@@ -258,7 +258,7 @@ public class ParserTests
         result.Should().HaveCount(1);
         var parsed = result.First();
         parsed.Provider.Should().Be("WOG");
-        parsed.FuelType.Should().Be(FuelType.Unknown);
+        parsed.FuelType.Should().Be(FuelType.Gasoline95);
         parsed.Liters.Should().Be(10m);
         parsed.ExpirationDate.Should().Be(new DateOnly(2026, 5, 13));
         parsed.VoucherNumber.Should().Be("10094100096856672796");
