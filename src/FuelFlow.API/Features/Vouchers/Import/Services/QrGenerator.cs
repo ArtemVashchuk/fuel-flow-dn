@@ -16,7 +16,7 @@ public sealed class QrGenerator : IQrGenerator
         var hints = new Dictionary<EncodeHintType, object>
         {
             { EncodeHintType.ERROR_CORRECTION, ZXing.QrCode.Internal.ErrorCorrectionLevel.H },
-            { EncodeHintType.QR_VERSION, 5 },
+            { EncodeHintType.QR_VERSION, 1 },
             { EncodeHintType.CHARACTER_SET, "UTF-8" },
             { EncodeHintType.DISABLE_ECI, true }
         };
