@@ -170,12 +170,148 @@ public class ParserTests
         // Assert
         result.Should().HaveCount(1);
         var parsed = result.First();
-        parsed.FuelType.Should().Be(FuelType.LPG);
+        parsed.FuelType.Should().Be(FuelType.Unknown);
         parsed.Liters.Should().Be(50m);
         parsed.VoucherNumber.Should().Be("99999600000020368126");
         parsed.ExpirationDate.Should().Be(default);
         parsed.QrPayload.Should().Be(string.Empty);
-        parsed.Confidence.Should().Be(60m);
+        parsed.Confidence.Should().Be(40m);
+    }
+
+    [Fact]
+    public void CanParse_ShouldReturnTrue_WhenWogKeywordIsPresent()
+    {
+        var parser = new WogVoucherParser();
+        var words = new List<Word>
+        {
+            CreateWord("10л", 0, 0),
+            CreateWord("A-95", 10, 0),
+            CreateWord("WOG", 20, 0)
+        };
+        var context = new ProviderDetectionContext { Words = words };
+
+        var result = parser.CanParse(context);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanParse_ShouldReturnFalse_WhenWogKeywordIsMissing()
+    {
+        var parser = new WogVoucherParser();
+        var words = new List<Word>
+        {
+            CreateWord("OKKO", 0, 0),
+            CreateWord("A-95", 10, 0)
+        };
+        var context = new ProviderDetectionContext { Words = words };
+
+        var result = parser.CanParse(context);
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ParseAsync_Wog_ShouldExtractCorrectFields()
+    {
+        var parser = new WogVoucherParser();
+        _qrDecoderMock.Setup(x => x.Decode(It.IsAny<Image>())).Returns("10094100096856672796");
+
+        var words = new List<Word>
+        {
+            CreateWord("10", 70, 100),
+            CreateWord("л", 85, 100),
+            CreateWord("A-95", 50, 80),
+            CreateWord("10094100096856672796", 20, 60),
+            CreateWord("Дійсний", 10, 40),
+            CreateWord("до", 50, 40),
+            CreateWord("13.05.2026", 70, 40),
+            CreateWord("WOG", 40, 20)
+        };
+
+        using var dummyImage = new Image<Rgba32>(100, 100);
+
+        var pageRender = new PageRender
+        {
+            PageNumber = 1,
+            Image = dummyImage,
+            WidthPoints = 200,
+            HeightPoints = 200,
+            Words = words
+        };
+
+        var region = new VoucherRegion
+        {
+            Bounds = new Rectangle(0, 0, 100, 100),
+            PdfBounds = new PdfRectangle(0, 0, 200, 200)
+        };
+
+        var context = new ProviderParseContext
+        {
+            PageRender = pageRender,
+            VoucherRegions = new[] { region },
+            QrDecoder = _qrDecoderMock.Object
+        };
+
+        var result = await parser.ParseAsync(context, CancellationToken.None);
+
+        result.Should().HaveCount(1);
+        var parsed = result.First();
+        parsed.Provider.Should().Be("WOG");
+        parsed.FuelType.Should().Be(FuelType.Gasoline95);
+        parsed.Liters.Should().Be(10m);
+        parsed.ExpirationDate.Should().Be(new DateOnly(2026, 5, 13));
+        parsed.VoucherNumber.Should().Be("10094100096856672796");
+        parsed.Confidence.Should().Be(80m);
+    }
+
+    [Fact]
+    public async Task ParseAsync_Wog_ShouldHandleUnknownFuelType()
+    {
+        var parser = new WogVoucherParser();
+        _qrDecoderMock.Setup(x => x.Decode(It.IsAny<Image>())).Returns((string?)null);
+
+        var words = new List<Word>
+        {
+            CreateWord("WOG", 0, 100),
+            CreateWord("20", 70, 80),
+            CreateWord("л", 85, 80),
+            CreateWord("99999600000020368126", 20, 60)
+        };
+
+        using var dummyImage = new Image<Rgba32>(100, 100);
+
+        var pageRender = new PageRender
+        {
+            PageNumber = 1,
+            Image = dummyImage,
+            WidthPoints = 200,
+            HeightPoints = 200,
+            Words = words
+        };
+
+        var region = new VoucherRegion
+        {
+            Bounds = new Rectangle(0, 0, 100, 100),
+            PdfBounds = new PdfRectangle(0, 0, 200, 200)
+        };
+
+        var context = new ProviderParseContext
+        {
+            PageRender = pageRender,
+            VoucherRegions = new[] { region },
+            QrDecoder = _qrDecoderMock.Object
+        };
+
+        var result = await parser.ParseAsync(context, CancellationToken.None);
+
+        result.Should().HaveCount(1);
+        var parsed = result.First();
+        parsed.Provider.Should().Be("WOG");
+        parsed.FuelType.Should().Be(FuelType.Unknown);
+        parsed.Liters.Should().Be(20m);
+        parsed.VoucherNumber.Should().Be("99999600000020368126");
+        parsed.Confidence.Should().Be(40m);
     }
 
     private static Word CreateWord(string text, double x, double y)

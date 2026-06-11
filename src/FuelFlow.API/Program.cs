@@ -43,9 +43,12 @@ try
 
     builder.Services.AddScoped<ImportVouchersCommandHandler>();
     builder.Services.AddScoped<IVoucherProviderParser, OkkoVoucherParser>();
+    builder.Services.AddScoped<IVoucherProviderParser, WogVoucherParser>();
     builder.Services.AddTransient<IPdfRenderer, PdfRenderer>();
     builder.Services.AddTransient<IQrDecoder, QrDecoder>();
     builder.Services.AddTransient<IVoucherDetector, VoucherDetector>();
+    builder.Services.AddTransient<IQrGenerator, QrGenerator>();
+    builder.Services.AddScoped<GetVouchersQueryHandler>();
 
     builder.Services.AddScoped<SendCodeCommandHandler>();
     builder.Services.AddScoped<VerifyCodeCommandHandler>();
